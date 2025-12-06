@@ -1,0 +1,30 @@
+# Node / Next / Turbo
+node_modules/
+.next/
+.turbo/
+
+# Env & secrets
+.env*
+!.env.example
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# OS / Editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# Build artifacts
+dist/
+coverage/
+out/
+
+# Supabase
+supabase/.branches
+supabase/.temp
+
