@@ -11,7 +11,24 @@ EchoPilot blends warm human replies with trustworthy automation. Use this docume
 ---
 
 ## 1. Brand Overview
-EchoPilot is an automated review-reply assistant designed for small businesses. The brand tone is warm, trustworthy, and modern, blending human communication with intelligent automation. The visual identity communicates clarity, reliability, and friendliness.
+
+**🔄 UPDATED POSITIONING (Jan 2026)**
+
+EchoPilot is a text-based business management platform designed for busy small business owners. Manage your entire Google Business Profile via SMS—respond to reviews, update hours, post updates, request reviews—all without opening a dashboard.
+
+**Core Value Proposition:** Bring business management to text.
+
+**Key Differentiators:**
+- **SMS-first:** Everything happens via text message (not another dashboard to check)
+- **Always with you:** Your phone is always in your pocket
+- **Instant:** Text is faster than logging into a dashboard
+- **Simple:** Reply with A, E, or S—no complicated interface
+- **AI as helper:** Get suggested replies, but you're always in control
+- **More than reviews:** Manage hours, posts, stats, review requests—all via SMS
+
+**Brand Tone:** Helpful, conversational, fast. Think "text from a friend" not "enterprise software."
+
+**Visual Identity:** Clean, modern, mobile-first. Communicates speed, simplicity, and reliability.
 
 ---
 
@@ -129,44 +146,62 @@ Clear space around the logo should equal the height of the paper plane.
 
 ### Voice Attributes
 EchoPilot should sound:
-- Warm  
-- Clear  
-- Helpful  
-- Confident  
-- Human  
+- **Conversational** (like texting a friend)
+- **Fast** (text is instant)
+- **Helpful** (always ready to assist)
+- **Simple** (no complicated instructions)
+- **Human** (never robotic)
 
 ### Guidelines
-- Simple language  
+- Write like you're texting  
+- Short sentences (5-10 words)
+- Use emojis sparingly (1-2 per message max)
 - Avoid technical jargon  
-- Short, friendly sentences  
-- Empathetic toward business owners  
+- Focus on speed and convenience
+- Empathetic toward busy business owners  
 
 ### Approved Phrases
-- “We’ll take care of it.”  
-- “Your autopilot for customer reviews.”  
-- “Smart, human replies—on autopilot.”  
+- "Just text back A to approve."  
+- "Manage your business from your phone."  
+- "Reply in seconds, not minutes."
+- "We'll send you a text when you get a review."
+- "Update your hours with a quick text."
+- "No dashboard needed."
 
 ### Avoid
-- “AI system response complete.”  
-- “Synergistic automation solution.”  
+- "Synergistic automation solution."  
+- "AI-powered platform"
+- "Dashboard interface"
+- "Advanced analytics"
+- Anything that sounds like enterprise software
 
 ### Messaging Pillars
-1. **Human warmth** – every reply should feel like the owner wrote it.
-2. **Trusted automation** – highlight that EchoPilot watches reviews 24/7 without sounding robotic.
-3. **Outcomes over features** – emphasize saved hours, protected reputation, and happier customers.
+1. **SMS-first** – Everything happens via text. Your phone is always with you.
+2. **Speed** – Respond in seconds while you're on the go. No logging in required.
+3. **Simplicity** – Reply with A, E, or S. Update hours with a text. That's it.
+4. **Control** – AI suggests, you decide. You're always in charge.
+5. **Beyond reviews** – Manage hours, posts, stats, review requests—all via text.
 
 ---
 
 ## 8. Taglines
 
-### Primary Recommendations
-- **“Your autopilot for customer reviews.”**  
-- **“Never miss a review again.”**  
-- **“Smart, human replies—on autopilot.”**
+### Primary Recommendations (SMS-First)
+- **"Manage your business by text."** 🔥  
+- **"Respond to reviews from your pocket."** 🔥
+- **"Your business, in your texts."**
 
 ### Secondary Options
-- “We reply so you don’t have to.”  
-- “Hands-off reputation management.”  
+- "No dashboard needed. Just text."
+- "Reply to reviews in seconds, not minutes."
+- "Business management, reimagined for SMS."
+- "Update hours, respond to reviews—all via text."
+- "The fastest way to manage your Google Business Profile."
+
+### Old Taglines (De-emphasized)
+- ~~"Your autopilot for customer reviews."~~ (too AI-focused)
+- ~~"Smart, human replies—on autopilot."~~ (automation isn't the main value)
+- ~~"Never miss a review again."~~ (okay, but doesn't highlight SMS)  
 
 ---
 
@@ -249,15 +284,85 @@ Will add these later
 
 ---
 
-## 14. Brand Brief Inputs (Product Onboarding)
+## 14. SMS Experience & Commands
 
-Capture these fields when a business connects Google so the AI can mirror their voice:
-- **Voice sliders** – scale for warmth, formality, and energy (map to tone modifiers).
-- **Signature** – closing line + name/title to append to every reply.
-- **Taboo phrases** – words to avoid plus escalation triggers (e.g., “never mention refunds in replies”).
-- **USP snippets** – 1–2 sentences describing what makes the business unique; weave into positive replies.
-- **Service recovery policy** – preferred wording when a review is <4 stars (apology template, contact info).
-- **Language preferences** – default language + whether bilingual replies are allowed.
+### Welcome Message (First SMS)
+```
+Welcome to EchoPilot! 🎉
+
+You can now manage your Google Business Profile via text.
+
+Try these:
+• Text STATS for insights
+• Text HELP for all commands
+
+Got a review? I'll notify you automatically!
+```
+
+### Review Notification Format
+```
+📊 New 5⭐ review from Sarah M.
+"Amazing service! The staff was so helpful..."
+
+Suggested reply:
+"Thank you, Sarah! We're thrilled you had a great experience. Hope to see you again soon! - Mike"
+
+Reply:
+A = Approve & post
+E [your text] = Edit & post
+S = Skip (manual later)
+```
+
+### Command Reference (for help messages)
+```
+📋 EchoPilot SMS Commands
+
+REVIEWS:
+• A = Approve suggested reply
+• E [text] = Edit & post custom reply
+• S = Skip (reply later)
+
+HOURS:
+• HOURS CLOSED [date]
+• HOURS 9-5 [date]
+• HOURS SHOW
+
+POSTS:
+• POST [message]
+
+STATS:
+• STATS = Show overview
+
+HELP:
+• HELP = Show all commands
+```
+
+### Tone Guidelines for SMS Messages
+- Keep messages under 160 characters when possible (1 SMS)
+- Use emojis sparingly: ✅ ⭐ 📊 📱 🎉
+- Always include clear next steps
+- Confirm actions: "✅ Updated hours: Closing at 2pm today"
+- Make errors friendly: "❌ Hmm, I didn't catch that. Reply HELP for commands."
+
+---
+
+## 15. Brand Brief Inputs (Product Onboarding)
+
+**SIMPLIFIED for SMS-First Experience:**
+
+Capture these fields during onboarding:
+- **Phone number** – Required for SMS notifications (must verify)
+- **Business name** – For personalizing review replies
+- **Signature** – Closing line for review replies (e.g., "- Mike, Owner")
+- **Default hours** – So "HOURS NORMAL" knows what to revert to
+- **AI suggestions** – Toggle on/off (optional helper)
+
+**Optional (for power users):**
+- USP snippets – 1-2 sentences about what makes business unique
+- Taboo phrases – Words to avoid in AI suggestions
+- Language preferences – Default language for replies
+
+**What Changed:** Simplified onboarding to focus on SMS essentials. No complex tone sliders or brand briefs required. Get users up and running in < 2 minutes.
 
 ---
 

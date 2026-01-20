@@ -1,5 +1,17 @@
 # EchoPilot – Marketing Site Content + Terms + Privacy Policy
 
+**⚠️ UPDATE NEEDED (Jan 2026):** This document needs to be updated for the new SMS-first positioning.
+
+**Key Changes Needed:**
+- Hero: Emphasize "Manage your business by text" instead of "automated replies"
+- How It Works: Highlight SMS interface (phone verification, text commands)
+- Features: Focus on SMS management (hours, posts, review responses, stats)
+- Pricing: Update tiers ($19/$39/$79) with SMS-based value prop
+- De-emphasize: AI automation, dashboard, "autopilot" language
+- New taglines: "Respond to reviews from your pocket" / "No dashboard needed"
+
+**Reference:** See `brand.md` for updated messaging and `plan.md` for product vision.
+
 ---
 
 # 1. HERO SECTION

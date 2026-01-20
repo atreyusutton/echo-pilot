@@ -2,17 +2,21 @@
 
 This guide walks through the exact order of operations required to ship the marketing site, build credibility, and secure every API credential (with an emphasis on Google Business Profile approval).
 
-**Last Updated:** December 10, 2025
+**Last Updated:** January 19, 2026
+
+**🎯 NEW PRODUCT VISION:** EchoPilot brings business management to text. Business owners manage their Google Business Profile entirely via SMS—respond to reviews, update hours, post updates, request reviews from customers—all without opening a dashboard. AI is an optional helper for reply suggestions, not the core feature.
 
 ---
 
 ## Product Experience & Hosting Snapshot
 1. `echopilot.me` (Vercel, static Next.js build) serves the marketing story and funnels traffic to `https://app.echopilot.me`.
 2. `app.echopilot.me` (Vercel, Next.js 15) handles signup/login via NextAuth (email + Google) before any Google connection screens appear.
-3. Onboarding connects Google Business Profile, lets the user pick locations, and captures their brand brief (tone sliders, signature, taboo phrases, USP snippets).
-4. Stripe Checkout starts a trial and gates the automation toggle so auto-replies only run for paying accounts.
-5. The Fastify API on Railway ingests Google Pub/Sub review events, calls OpenAI with the stored brand brief, and posts replies back via the GBP API.
-6. The dashboard shows queue status, allows manual edits, and keeps subscription state in sync with Stripe.
+3. **SMS Onboarding:** Users verify their phone number via SMS and connect their Google Business Profile.
+4. **Text-Based Management:** Business owners receive review notifications via SMS and can respond with simple commands (A/E/S). They can also manage hours, post updates, and request reviews—all via text.
+5. **AI as Helper:** When responding to reviews, AI suggests a reply but owners can approve (A), edit (E), or skip (S). AI is optional and conversational, not automated.
+6. Stripe Checkout starts a trial. SMS features are available to paying accounts.
+7. The Fastify API on Railway ingests Google Pub/Sub review events, sends SMS notifications via Twilio, processes SMS responses, and posts to GBP API.
+8. The dashboard is a secondary interface for power users who want analytics and bulk actions.
 
 ---
 
@@ -76,13 +80,78 @@ This guide walks through the exact order of operations required to ship the mark
 
 ## Phase 2 – Build Core Product (During 60-Day Wait)
 
-**Goal:** Build the complete product with mock/test APIs so we're ready to launch when GBP API approval arrives.
+**Goal:** Build the SMS-first business management interface with Twilio. Make it work with mock GBP APIs so we're ready to launch when GBP API approval arrives.
 
 **Status:** ⏳ PENDING (Start after Phase 0 complete)
 
 **Timeline:** Dec 10, 2025 → Feb 8, 2026 (parallel with Phase 1)
 
-### 2.1 Database & Schema Setup
+**Priority Order:** Twilio SMS → Database → Auth → Mock GBP API → AI (optional helper) → Dashboard → Stripe
+
+---
+
+### 🔄 KEY PRODUCT PIVOT (Jan 2026)
+
+**FROM:** AI-powered review automation tool
+**TO:** Text-based business management platform
+
+**What Changed:**
+1. **SMS is now the PRIMARY interface** (not dashboard)
+2. **AI is now OPTIONAL** (suggestion helper, not automation)
+3. **More features via SMS:** Hours management, posts, business info, stats
+4. **Review requests from POS/booking systems** to generate more reviews
+5. **Dashboard is SECONDARY** (for power users who want analytics)
+
+**Why This Works Better:**
+- ✅ Business owners always have their phone
+- ✅ Text is faster than opening a dashboard
+- ✅ Less reliance on AI (which can be hit-or-miss)
+- ✅ More value beyond just reviews (hours, posts, etc.)
+- ✅ Sticky: Once they rely on SMS management, hard to leave
+- ✅ Review request automation = more reviews = more value
+
+**Development Impact:**
+- Twilio integration moves to Week 1 (immediate priority)
+- Can test entire SMS experience with mock GBP data before API approval
+- OpenAI becomes optional dependency
+- Dashboard can be minimal MVP
+
+---
+
+### 2.1 Twilio SMS Setup (PRIORITY #1) 🔥
+
+**Goal:** Get SMS working immediately so you can test the core text-based experience.
+
+- [ ] **Create Twilio Account**
+  - [ ] Sign up at https://www.twilio.com/
+  - [ ] Verify email and phone
+  - [ ] Add payment method (removes trial limitations)
+  - [ ] Buy phone number ($1.15/month)
+  - [ ] Test SMS to your own phone
+- [ ] **Start A2P 10DLC Registration**
+  - [ ] Register business brand (1-2 business days approval)
+  - [ ] Create "Customer Care" campaign (1-2 business days approval)
+  - [ ] Total timeline: 2-5 business days
+  - [ ] Cost: $4/month (brand) + $10-15/month (campaign)
+- [ ] **Install Twilio SDK & Test**
+  ```bash
+  npm install twilio
+  ```
+  - [ ] Create test endpoint to send SMS
+  - [ ] Send yourself a test message
+  - [ ] Confirm it works
+- [ ] **Store Credentials**
+  ```bash
+  TWILIO_ACCOUNT_SID=
+  TWILIO_AUTH_TOKEN=
+  TWILIO_PHONE_NUMBER=
+  ```
+
+**Why First?** You can test the entire SMS experience with mock review data before Google API is ready.
+
+---
+
+### 2.2 Database & Schema Setup
 - [ ] **Supabase Setup**
   - [ ] Create Supabase project `echopilot-db`
   - [ ] Choose region near target users
@@ -90,20 +159,22 @@ This guide walks through the exact order of operations required to ship the mark
   - [ ] Enable daily backups
   - [ ] Store anon + service role keys securely
 - [ ] **Prisma Schema Design**
-  - [ ] Users table (id, email, name, created_at)
+  - [ ] Users table (id, email, name, phone_number, sms_verified, created_at)
   - [ ] Accounts table (NextAuth integration)
   - [ ] Sessions table (NextAuth integration)
   - [ ] BusinessProfiles table (google_account_id, location_ids, connected_at)
-  - [ ] BrandBriefs table (user_id, tone, signature, taboo_phrases, usp_snippets)
-  - [ ] Reviews table (review_id, location_id, rating, text, author, created_at)
+  - [ ] Reviews table (review_id, location_id, rating, text, author, sms_sent_at, sms_response, created_at)
   - [ ] Replies table (review_id, reply_text, status, sent_at)
+  - [ ] SmsLogs table (user_id, review_id, direction, from_number, to_number, body, status)
   - [ ] Subscriptions table (user_id, stripe_customer_id, plan, status)
+  - [ ] Integrations table (user_id, platform, access_token, settings) - for POS/booking systems
+  - [ ] ReviewRequests table (user_id, integration_id, customer_email, scheduled_send_at, status)
 - [ ] **Run Migrations**
   - [ ] `npx prisma migrate dev`
   - [ ] Test with sample data
   - [ ] Set up Prisma Client
 
-### 2.2 Authentication & User Management
+### 2.3 Authentication & User Management
 - [ ] **NextAuth Setup**
   - [ ] Install NextAuth in `app.echopilot.me`
   - [ ] Configure Google OAuth provider (test mode)
@@ -113,10 +184,16 @@ This guide walks through the exact order of operations required to ship the mark
 - [ ] **User Onboarding Flow**
   - [ ] Sign up / Sign in pages
   - [ ] Email verification
+  - [ ] **SMS Phone Verification** 🔥 (NEW - CRITICAL)
+    - [ ] Phone number input with country code
+    - [ ] Send 6-digit verification code via Twilio
+    - [ ] Code expires after 10 minutes
+    - [ ] Confirm code and mark SMS as verified
+    - [ ] Enable SMS notifications by default after verification
   - [ ] Profile setup
   - [ ] Dashboard redirect after login
 
-### 2.3 Google Business Profile Integration (Mock Mode)
+### 2.4 Google Business Profile Integration (Mock Mode)
 - [ ] **OAuth Flow**
   - [ ] Create OAuth consent screen in Google Cloud
   - [ ] Add scope: `https://www.googleapis.com/auth/business.manage`
@@ -128,49 +205,155 @@ This guide walks through the exact order of operations required to ship the mark
   - [ ] Create mock GBP API responses for testing
   - [ ] Mock location listing
   - [ ] Mock review fetching
-  - [ ] Mock reply posting
+  - [ ] Mock reply posting (via SMS commands)
+  - [ ] Mock business info updates (hours, phone, description)
+  - [ ] Mock post creation
   - [ ] Feature flag to switch between mock/real API
 
-### 2.4 Brand Brief Capture
-- [ ] **Brand Brief Form**
-  - [ ] Tone sliders (formal ↔ casual, empathetic ↔ professional)
-  - [ ] Signature input (e.g., "- Sarah, Owner")
-  - [ ] Taboo phrases textarea
-  - [ ] USP snippets (what makes business unique)
-  - [ ] Preferred openings/closings
-  - [ ] Save to database
-- [ ] **Brand Brief Editor**
-  - [ ] View current brand brief
-  - [ ] Edit and update
-  - [ ] Preview sample AI responses
+---
 
-### 2.5 OpenAI Integration
+### 2.5 SMS Review Notification & Response Flow 🔥
+
+**Goal:** Build the core SMS experience for review management.
+
+- [ ] **SMS Service Module**
+  - [ ] Create `lib/sms-service.ts`
+  - [ ] Function: `sendReviewNotification(userId, reviewId)`
+  - [ ] Format notification message with review details
+  - [ ] Include AI-suggested reply (optional)
+  - [ ] Include commands: A=Approve, E=Edit, S=Skip
+  - [ ] Log all outbound SMS to database
+- [ ] **Twilio Webhook Handler**
+  - [ ] Create `/api/twilio/webhook` endpoint
+  - [ ] Verify Twilio signature
+  - [ ] Parse incoming SMS body
+  - [ ] Identify user by phone number
+  - [ ] Find most recent pending review
+  - [ ] Process commands:
+    - [ ] "A" → Post AI reply to GBP (or mock)
+    - [ ] "E [text]" → Post custom reply to GBP (or mock)
+    - [ ] "S" → Mark as skipped
+  - [ ] Send confirmation SMS
+  - [ ] Handle errors gracefully
+- [ ] **Review Processing Pipeline**
+  - [ ] When new review arrives (mock or real):
+    1. Save to database
+    2. Generate AI suggestion (optional)
+    3. Send SMS notification
+  - [ ] Wait for SMS response
+  - [ ] Post reply based on command
+  - [ ] Update review status
+- [ ] **Test End-to-End**
+  - [ ] Create mock review
+  - [ ] Receive SMS notification
+  - [ ] Reply with "A", "E", "S" commands
+  - [ ] Verify mock GBP API receives reply
+
+### 2.6 OpenAI Integration (Optional Helper) 💡
+
+**Note:** AI is now an **optional suggestion tool**, not the core feature. Business owners can skip it entirely and write their own replies via SMS.
+
 - [ ] **OpenAI Setup**
   - [ ] Create OpenAI account / project
   - [ ] Note `OPENAI_ORG_ID` and `OPENAI_PROJECT_ID`
   - [ ] Generate API key (`OPENAI_API_KEY`)
   - [ ] Confirm billing is enabled
   - [ ] Test with sample curl to `/v1/chat/completions`
-- [ ] **Reply Generation Service**
-  - [ ] Create prompt template using brand brief
-  - [ ] Build function to generate replies
-  - [ ] Include review context (rating, text, author)
-  - [ ] Handle errors and retries
-  - [ ] Add response validation
+- [ ] **Reply Suggestion Service**
+  - [ ] Create simple prompt template
+  - [ ] Build function to generate reply suggestions
+  - [ ] Include review context (rating, text, author, business name)
+  - [ ] Keep it conversational and brief (2-3 sentences)
+  - [ ] Handle errors gracefully (fall back to no suggestion)
+  - [ ] **Make it optional** - if OpenAI fails, still send SMS without suggestion
   - [ ] Test with various review scenarios
+- [ ] **Settings Toggle**
+  - [ ] Allow users to disable AI suggestions entirely
+  - [ ] If disabled, send SMS without suggestion, let owner write from scratch
 
-### 2.6 Stripe Integration
+---
+
+### 2.7 SMS-Based Business Management Features 🔥
+
+**Goal:** Let business owners manage their GBP entirely via text.
+
+- [ ] **Hours Management via SMS**
+  - [ ] Command: `HOURS CLOSED TODAY`
+  - [ ] Command: `HOURS 9-5 [date]`
+  - [ ] Command: `HOURS NORMAL` (revert to default)
+  - [ ] Command: `HOURS SHOW` (display current hours)
+  - [ ] Parse natural language dates (today, tomorrow, Monday, Dec 25)
+  - [ ] Update via mock GBP API (or real when approved)
+  - [ ] Send confirmation SMS
+- [ ] **Post Updates via SMS**
+  - [ ] Command: `POST [message]`
+  - [ ] Create GBP post with message content
+  - [ ] Confirmation with preview
+  - [ ] Post to GBP API
+- [ ] **Business Info Updates via SMS**
+  - [ ] Command: `PHONE [number]` - Update business phone
+  - [ ] Command: `WEBSITE [url]` - Update website
+  - [ ] Each command updates GBP and confirms via SMS
+- [ ] **Quick Stats via SMS**
+  - [ ] Command: `STATS` - Get profile views, calls, reviews
+  - [ ] Format as friendly SMS response
+  - [ ] Pull from GBP Performance API
+- [ ] **Help System**
+  - [ ] Command: `HELP` - Show all available commands
+  - [ ] Command: `HELP [command]` - Specific help
+  - [ ] Send as SMS response
+
+---
+
+### 2.8 Review Request Integration (POS/Booking Systems)
+
+**Goal:** Automatically request reviews after customer visits.
+
+- [ ] **Integration Architecture**
+  - [ ] Database schema for integrations (user_id, platform, tokens, settings)
+  - [ ] Database schema for review_requests (customer_email, scheduled_send_at, status)
+- [ ] **Square Integration (Priority #1)**
+  - [ ] OAuth flow for Square
+  - [ ] Webhook handler for `payment.created`
+  - [ ] Extract customer email/phone from payment
+  - [ ] Queue review request (2-24 hour delay)
+  - [ ] Send review request email or SMS
+  - [ ] Include Google review link
+  - [ ] Track clicks and conversions
+- [ ] **Zapier Integration (Priority #2)**
+  - [ ] Create Zapier webhook trigger
+  - [ ] Accept standardized payload
+  - [ ] Queue review request
+  - [ ] Allows users to connect ANY Zapier-supported app
+- [ ] **Review Request Templates**
+  - [ ] Email template with Google review link
+  - [ ] SMS template with shortened link
+  - [ ] Personalization (customer name, business name)
+  - [ ] Opt-out handling (STOP commands)
+- [ ] **Settings & Configuration**
+  - [ ] Delay before sending (2-24 hours)
+  - [ ] Minimum transaction amount
+  - [ ] Frequency limits (max 1 per customer per 30 days)
+  - [ ] Message customization
+
+### 2.9 Stripe Integration
+
+**Updated Pricing Strategy:** SMS-based value proposition
+
 - [ ] **Stripe Setup**
   - [ ] Create Stripe account
   - [ ] Switch to Test mode
   - [ ] Copy publishable + secret keys
   - [ ] Store as `NEXT_PUBLIC_STRIPE_KEY` and `STRIPE_SECRET_KEY`
 - [ ] **Product & Pricing Setup**
-  - [ ] Create Product: "Starter" - $9/month
-  - [ ] Create Product: "Standard" - $19/month
-  - [ ] Create Product: "Pro" - $29/month
+  - [ ] Create Product: "Starter" - $19/month (1 location, SMS notifications, AI suggestions)
+  - [ ] Create Product: "Standard" - $39/month (3 locations, SMS management, review requests, stats)
+  - [ ] Create Product: "Pro" - $79/month (10 locations, all SMS features, integrations, team access)
   - [ ] Capture price IDs for each
-  - [ ] Define feature limits per plan
+  - [ ] Define feature limits per plan:
+    - Starter: SMS review responses only
+    - Standard: + Hours/posts via SMS, basic integrations
+    - Pro: + All SMS commands, priority support, multiple integrations
 - [ ] **Checkout Flow**
   - [ ] Create pricing page in app
   - [ ] Build Stripe Checkout session creation
@@ -186,37 +369,54 @@ This guide walks through the exact order of operations required to ship the mark
   - [ ] Store webhook signing secret
   - [ ] Test with Stripe CLI
 
-### 2.7 Dashboard UI
+### 2.10 Dashboard UI (Secondary Interface)
+
+**Note:** Dashboard is now a **secondary interface** for power users. Most users manage everything via SMS.
+
 - [ ] **Main Dashboard**
   - [ ] Overview stats (reviews, replies, response rate)
-  - [ ] Recent reviews list
-  - [ ] Pending replies queue
+  - [ ] SMS activity log (messages sent/received)
+  - [ ] Recent reviews list (read-only view)
   - [ ] Subscription status widget
-- [ ] **Review Management**
-  - [ ] List all reviews with filters (rating, date, location)
-  - [ ] View individual review details
-  - [ ] Edit AI-generated reply before sending
-  - [ ] Manual reply composer
-  - [ ] Reply history
-- [ ] **Settings Pages**
+- [ ] **Settings Pages (Minimal)**
+  - [ ] Phone verification status
   - [ ] Connected Business Profiles
-  - [ ] Brand Brief editor
-  - [ ] Automation toggle (on/off)
-  - [ ] Notification preferences
+  - [ ] SMS preferences (enable/disable by notification type)
+  - [ ] Integration connections (Square, Zapier, etc.)
   - [ ] Billing & subscription management
-  - [ ] Account settings
+  - [ ] SMS command reference (help guide)
+- [ ] **Optional: Manual Reply Interface**
+  - [ ] For users who want to reply from desktop
+  - [ ] View pending reviews
+  - [ ] Compose replies with AI suggestions
+  - [ ] Post to GBP
 
-### 2.8 Queue & Background Jobs
+**Design Philosophy:** Keep dashboard minimal. SMS is the primary interface.
+
+---
+
+### 2.11 Queue & Background Jobs
 - [ ] **Choose Queue Solution**
   - [ ] Evaluate: Cloudflare Queues vs BullMQ (Redis) vs Inngest
   - [ ] Make decision based on hosting choice
 - [ ] **Review Processing Queue**
   - [ ] Job: Fetch new reviews
-  - [ ] Job: Generate AI reply
-  - [ ] Job: Post reply to GBP
+  - [ ] Job: Generate AI suggestion (optional)
+  - [ ] Job: Send SMS notification
+  - [ ] Job: Wait for SMS response
+  - [ ] Job: Post reply to GBP based on command
   - [ ] Job: Update database
   - [ ] Handle job failures and retries
   - [ ] Add job monitoring/logging
+- [ ] **Review Request Queue**
+  - [ ] Job: Process scheduled review requests
+  - [ ] Job: Send review request email/SMS
+  - [ ] Job: Track clicks and conversions
+  - [ ] Handle opt-outs
+- [ ] **Business Info Update Queue**
+  - [ ] Job: Process SMS commands for hours/posts/info
+  - [ ] Job: Update GBP via API
+  - [ ] Job: Send confirmation SMS
 
 **Exit criteria:** Fully functional app with mock GBP API, ready to swap in real credentials.
 
@@ -497,6 +697,11 @@ SUPABASE_SERVICE_ROLE_KEY=
 NEXTAUTH_URL=https://app.echopilot.me
 NEXTAUTH_SECRET=
 
+# Twilio (Priority #1) 🔥
+TWILIO_ACCOUNT_SID=ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+TWILIO_AUTH_TOKEN=
+TWILIO_PHONE_NUMBER=+15551234567
+
 # Google Cloud & OAuth
 GOOGLE_CLIENT_ID=
 GOOGLE_CLIENT_SECRET=
@@ -512,11 +717,11 @@ GCP_PUBSUB_SUBSCRIPTION=reviews-events-sub
 NEXT_PUBLIC_STRIPE_KEY=
 STRIPE_SECRET_KEY=
 STRIPE_WEBHOOK_SECRET=
-STRIPE_PRICE_ID_STARTER=
-STRIPE_PRICE_ID_STANDARD=
-STRIPE_PRICE_ID_PRO=
+STRIPE_PRICE_ID_STARTER=price_xxx (for $19/mo plan)
+STRIPE_PRICE_ID_STANDARD=price_xxx (for $39/mo plan)
+STRIPE_PRICE_ID_PRO=price_xxx (for $79/mo plan)
 
-# OpenAI
+# OpenAI (Optional Helper)
 OPENAI_API_KEY=
 OPENAI_ORG_ID=
 OPENAI_PROJECT_ID=
@@ -531,8 +736,11 @@ LOG_LEVEL=info
 SENTRY_DSN=
 
 # Feature Flags
-ENABLE_AUTO_REPLY=true
+ENABLE_AI_SUGGESTIONS=true
 ENABLE_MOCK_GBP_API=false
+ENABLE_SMS_HOURS_MANAGEMENT=true
+ENABLE_SMS_POSTS=true
+ENABLE_REVIEW_REQUESTS=true
 ```
 
 ---
@@ -565,36 +773,43 @@ ENABLE_MOCK_GBP_API=false
 **December 2025 (Weeks 1-3)**
 - Week 1 (Dec 10-16):
   - [x] Marketing site live
+  - [ ] **🔥 Create Twilio account & buy phone number**
+  - [ ] **🔥 Start A2P 10DLC registration (2-5 day approval)**
   - [ ] Start Supabase setup
-  - [ ] Start NextAuth implementation
   - [ ] GBP: Post 1st weekly update
 - Week 2 (Dec 17-23):
-  - [ ] Complete database schema
+  - [ ] **🔥 Build SMS phone verification flow**
+  - [ ] **🔥 Test sending/receiving SMS**
+  - [ ] Complete database schema (with SMS tables)
   - [ ] Build authentication flow
-  - [ ] Start brand brief capture UI
   - [ ] GBP: Post 2nd weekly update, get first review
 - Week 3 (Dec 24-31):
-  - [ ] OpenAI integration
+  - [ ] **🔥 Build SMS review notification system**
+  - [ ] **🔥 Build Twilio webhook handler (A/E/S commands)**
   - [ ] Mock GBP API provider
-  - [ ] Dashboard UI foundations
+  - [ ] Test full SMS review flow with mock data
   - [ ] GBP: Post 3rd weekly update
 
 **January 2026 (Weeks 4-7)**
 - Week 4 (Jan 1-7):
-  - [ ] Stripe integration
-  - [ ] Checkout flow
+  - [ ] **🔥 Add SMS hours management (HOURS commands)**
+  - [ ] **🔥 Add SMS posts (POST commands)**
+  - [ ] Optional: Add OpenAI suggestions
   - [ ] GBP: Post 4th weekly update
 - Week 5 (Jan 8-14):
-  - [ ] Review management UI
-  - [ ] Reply generation & editing
+  - [ ] **🔥 Build Square integration for review requests**
+  - [ ] **🔥 Build Zapier webhook integration**
+  - [ ] Stripe integration & checkout flow
   - [ ] GBP: Post 5th weekly update, get 2nd review
 - Week 6 (Jan 15-21):
-  - [ ] Queue setup
-  - [ ] Background job processing
+  - [ ] Queue setup & background jobs
+  - [ ] Review request automation
+  - [ ] SMS stats commands
   - [ ] GBP: Post 6th weekly update
 - Week 7 (Jan 22-28):
-  - [ ] Settings pages
-  - [ ] Automation toggle
+  - [ ] Minimal dashboard UI (secondary interface)
+  - [ ] Settings pages (SMS preferences, integrations)
+  - [ ] SMS help system
   - [ ] GBP: Post 7th weekly update, get 3rd review
 
 **February 2026 (Weeks 8-10)**
@@ -654,20 +869,29 @@ ENABLE_MOCK_GBP_API=false
 - [ ] 3+ reviews received and responded to
 - [ ] Marketing site getting 100+ visitors/month
 - [ ] Waitlist: 50+ signups
+- [ ] **SMS system tested end-to-end with mock data**
+- [ ] **A2P 10DLC registration approved**
 
 ### Phase 7 (Beta)
-- [ ] 10+ beta users signed up
+- [ ] 10+ beta users signed up with verified phone numbers
 - [ ] 5+ paid conversions
+- [ ] **100+ SMS messages sent/received**
+- [ ] **80%+ of reviews responded to via SMS (not dashboard)**
 - [ ] 50+ reviews processed
-- [ ] 4.5+ star average for AI replies (user rating)
+- [ ] 3+ users using SMS hours/posts features
 - [ ] < 5% churn rate
+- [ ] User feedback: "SMS is faster than dashboard"
 
 ### Phase 8 (Growth)
 - [ ] 100+ paying customers
-- [ ] $10K+ MRR
+- [ ] $10K+ MRR ($19-79/month per customer)
 - [ ] 1000+ reviews processed/month
+- [ ] **10,000+ SMS messages/month**
+- [ ] **5+ POS/booking integrations generating review requests**
+- [ ] 50+ review requests sent daily
+- [ ] 15-25% review request conversion rate
 - [ ] < 3% churn rate
-- [ ] 4.8+ star average for AI replies
+- [ ] 90%+ of interactions happen via SMS
 
 ---
 
@@ -688,7 +912,138 @@ With this updated plan, you have:
 
 ---
 
-## Appendix A – Business Profile API Approval Notes
+## Appendix A – Twilio Implementation Reference
+
+### Detailed Implementation Guides
+
+For comprehensive implementation details, see these companion documents:
+
+1. **`twilio-integration-plan.md`**
+   - Complete implementation guide for SMS review responses
+   - Database schema with SMS tables
+   - Phone verification flow (6-digit code)
+   - SMS webhook handler (A/E/S commands)
+   - Code examples for Twilio SDK
+   - Testing checklist
+   - Security considerations
+
+2. **`sms-feature-ideas.md`**
+   - Extensive list of SMS features beyond reviews
+   - Hours management commands
+   - Post updates via SMS
+   - Photo uploads (MMS)
+   - Stats commands
+   - Q&A management
+   - Competitor monitoring
+   - Team coordination
+   - Command reference sheet
+   - Pricing strategy by feature tier
+
+3. **`twilio-approval-process.md`**
+   - A2P 10DLC registration guide
+   - Step-by-step approval timeline (2-5 business days)
+   - Campaign type selection ("Customer Care")
+   - Cost breakdown ($15-20/month setup)
+   - Compliance requirements
+   - Message throughput limits
+   - Troubleshooting common issues
+
+4. **`review-request-integrations.md`**
+   - POS/booking system integrations
+   - Square integration (easiest, highest priority)
+   - Toast, Clover, Mindbody, Vagaro guides
+   - Zapier universal integration
+   - Webhook architecture
+   - Database schema for review requests
+   - Email/SMS templates
+   - Compliance (CAN-SPAM, TCPA)
+   - ROI calculations
+
+### Quick Start: Twilio Setup (Week 1)
+
+**Day 1: Account Setup**
+```bash
+1. Go to https://www.twilio.com/try-twilio
+2. Sign up (get $15 free credit)
+3. Verify email and phone
+4. Add payment method (instant upgrade)
+5. Buy phone number ($1.15/month)
+6. Test SMS to your own phone
+```
+
+**Day 2-5: A2P Registration**
+```bash
+1. Register business brand (1-2 business days)
+   - Business name: EchoPilot
+   - EIN: [your tax ID]
+   - Website: echopilot.me
+   - Cost: $4/month
+
+2. Create "Customer Care" campaign (1-2 business days)
+   - Campaign: "Review Response Notifications"
+   - Use case: Customer Care (two-way SMS)
+   - Sample messages: [review notification format]
+   - Cost: $10-15/month
+```
+
+**Credentials:**
+```bash
+TWILIO_ACCOUNT_SID=ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+TWILIO_AUTH_TOKEN=your_auth_token_here
+TWILIO_PHONE_NUMBER=+15551234567
+```
+
+### Cost Summary
+
+**Setup Costs:**
+- Phone number: $1.15/month
+- A2P Brand registration: $4/month
+- A2P Campaign: $10-15/month
+- **Total setup: ~$15-20/month**
+
+**Usage Costs:**
+- SMS sent: $0.0079 each
+- SMS received: $0.0079 each
+
+**Example for 100 customers:**
+- 100 reviews/month/customer = 10,000 reviews total
+- 10,000 SMS sent = $79
+- 10,000 SMS received = $79
+- Setup fees = $20
+- **Total: ~$178/month**
+
+**Revenue (charging $10-79/month per customer):**
+- 100 customers × $39 average = $3,900/month
+- Costs = $178
+- **Profit: $3,722/month**
+
+### Implementation Priority
+
+**Phase 1 (Week 1-2):** Core SMS
+- ✅ Phone verification
+- ✅ Review notifications
+- ✅ A/E/S commands
+- ✅ Mock GBP integration
+
+**Phase 2 (Week 3-4):** Business Management
+- ✅ Hours management
+- ✅ Post updates
+- ✅ Stats commands
+
+**Phase 3 (Week 5-6):** Review Requests
+- ✅ Square integration
+- ✅ Zapier integration
+- ✅ Email/SMS templates
+
+**Phase 4 (Later):** Advanced Features
+- ⏳ Photo uploads (MMS)
+- ⏳ Q&A management
+- ⏳ Competitor monitoring
+- ⏳ Team coordination
+
+---
+
+## Appendix B – Business Profile API Approval Notes
 
 ### Understanding the API Landscape
 - **By default:** You only see the Performance API (metrics, insights)
@@ -768,7 +1123,7 @@ With this updated plan, you have:
 
 ---
 
-## Appendix B – Important Links
+## Appendix C – Important Links
 
 ### Google Business Profile
 - GBP Dashboard: https://business.google.com/
@@ -799,7 +1154,7 @@ With this updated plan, you have:
 
 ---
 
-## Appendix C – Troubleshooting
+## Appendix D – Troubleshooting
 
 ### GBP API Not Working
 - **Check quota:** 0 QPM means not approved yet
@@ -840,7 +1195,7 @@ With this updated plan, you have:
 
 ---
 
-## Appendix D – Weekly GBP Activity Checklist
+## Appendix E – Weekly GBP Activity Checklist
 
 Use this to stay consistent during the 60-day waiting period:
 
